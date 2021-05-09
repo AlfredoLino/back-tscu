@@ -14,20 +14,34 @@ app.use(cors())
 app.use(LogInRoute)
 app.use(SignInRoute)
 app.use(rtTemp)
+app.post("/webhook", (req, res, next) => {
+    console.log(req.body)
+})
 
 User.hasMany(Datos, {
-    foreignKey: 'email'
-})
+    onDelete: 'cascade'
+}) 
 Datos.belongsTo(User)
 
 con.sync().then(inf => {
     
-    app.listen(8080);
+    // const expressServer = app.listen(8080);
             
-    
-    console.log("Server On The Run: PORT:", 8080)
+    app.listen(8080, () => {
+        console.log("Listen 8080")
+    })
+    /*
+    Datos.findAll().then(data => {
+        data.forEach( async (inf) => {
+            console.log(inf.dataValues)
+            
+        } )
+    }).catch(err => {
+        console.log(err)
+    }) */
+
 }).catch(err => {
-    console.log(err)
+    console.log("HUBO ERROR:", err)
 })
 
 
