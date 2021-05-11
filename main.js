@@ -9,12 +9,47 @@ const Datos = require("./Models/Datos")
 const rtTemp = require("./routes/GET/temperatura")
 const SignInRoute = require('./routes/POST/SignIn')
 const LogInRoute = require('./routes/POST/LogIn')
+const dialogFulfillment = require("dialogflow-fulfillment")
+const path = require("path")
+const expfileup = require("express-fileupload")
+app.use(express.static("public"))
 app.use(express.json())
 app.use(cors())
 app.use(LogInRoute)
 app.use(SignInRoute)
 app.use(rtTemp)
+app.post("/upload/:id", expfileup(), (req, res, next) => {
+    console.log(req.params)
+    const file = req.files.perfil
+    file.mv(path.join(__dirname, "public", "user", file.name), (err, succ) => {
+        if(err){
+            res.status(401).json({ok: false, message : "Error al subir archivo"})
+        }else{
+            res.status(201).json({ok : true, message : "Archivo subido con exito!!"})
+        }
+    })
+})
 app.post("/webhook", (req, res, next) => {
+
+    const agent = new dialogFulfillment.WebhookClient({
+        request: req,
+        response: res
+    })
+
+    function pandemicInfo (agent){
+        agent.add("Info de la pandemia")
+        agent.add("Informacion sobre la pandemia")
+    }
+
+    function userSettings(agent){
+        agent.add("Vamos a cambiar su usario crack")
+    }
+    var intentMap = new Map()
+
+    intentMap.set('pandemicInfo', pandemicInfo)
+    intentMap.set('userSettings', userSettings)
+
+    agent.handleRequest(intentMap)
     console.log(req.body)
 })
 

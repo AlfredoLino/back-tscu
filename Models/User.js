@@ -22,6 +22,11 @@ const User = con.define('Usuario', {
         allowNull: true,
         unique: true,
         type : DataTypes.STRING
+    },
+    photoProfile: {
+        type: DataTypes.STRING,
+        unique: false,
+        allowNull: true
     }
 })
 
