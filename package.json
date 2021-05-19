@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon main.js"
+    "start": "nodemon main.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@stripe/stripe-js": "^1.14.0",
     "actions-on-google": "^2.14.0",
     "cors": "^2.8.5",
     "dialogflow-fulfillment": "^0.6.1",
@@ -21,7 +22,8 @@
     "node-fetch": "^2.6.1",
     "scrape-it": "^5.3.1",
     "sequelize": "^6.6.2",
-    "sequelize-auto": "^0.8.2"
+    "sequelize-auto": "^0.8.2",
+    "stripe": "^8.148.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"

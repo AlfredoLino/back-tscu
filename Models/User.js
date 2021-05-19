@@ -18,6 +18,11 @@ const User = con.define('Usuario', {
         unique : false
 
     },
+    nombre: {
+        allowNull: false,
+        unique: false,
+        type: DataTypes.STRING
+    },
     idchat:{
         allowNull: true,
         unique: true,

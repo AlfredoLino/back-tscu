@@ -13,19 +13,7 @@ const Datos = con.define('Dato',
             type: dt.DOUBLE(2, 2),
             allowNull: false,
             unique: false
-        },
-        fecha:{
-            type: dt.DATE,
-            defaultValue: dt.NOW,
-            allowNull: false,
-            unique: false
-
-        },    
-        usuario: {
-            type: dt.INTEGER,
-            allowNull: false
         }
-
     }
 )
 

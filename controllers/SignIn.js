@@ -4,8 +4,8 @@ const User = require("../Models/User")
 
 const controller = (req, res, next) => {
         
-    const {email, pass} = req.body
-    User.create({ email, pass }).then( inf => {
+    const {email, pass, nombre} = req.body
+    User.create({ email, pass, nombre }).then( inf => {
         res.status(201).json({
             ok: true,
             message: "Cuenta creada con exito!"

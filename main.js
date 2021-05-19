@@ -6,26 +6,81 @@ const app = express()
 const con = require("./Models/dbcon")
 const User = require("./Models/User")
 const Datos = require("./Models/Datos")
+const Bitacora = require("./Models/Bitacora")
+const informe = require("./routes/POST/informe")
 const rtTemp = require("./routes/GET/temperatura")
 const SignInRoute = require('./routes/POST/SignIn')
 const LogInRoute = require('./routes/POST/LogIn')
 const dialogFulfillment = require("dialogflow-fulfillment")
+const jwt = require('jsonwebtoken')
 const path = require("path")
 const expfileup = require("express-fileupload")
+
+/**
+ * Middlewares
+ */
 app.use(express.static("public"))
 app.use(express.json())
 app.use(cors())
+/**
+ * Declaracion de rutas
+ */
+app.use(informe)
 app.use(LogInRoute)
 app.use(SignInRoute)
 app.use(rtTemp)
+
+
+app.get("/getUsers/:email/:pass", async (req, res, next) => {
+    console.log(req.params);
+    const { email, pass } = req.params
+    try {
+        const record = await User.findAll({
+            where: {
+                email,
+                pass
+            }
+        })
+        if(record.length > 0){
+            const [user] = record
+            const token = jwt.sign({iduser : user.id, email: user.email}, process.env.JWTKEY)
+            res.status(201).send(token)    
+        }
+        else 
+            res.status(400).send("Error")
+    } catch (error) {
+        console.log(error)
+        res.status(401).json({ ok : false, msg: "No se ha podido iniciar sesión. Revise sus credenciales."})
+    }
+})
 app.post("/upload/:id", expfileup(), (req, res, next) => {
-    console.log(req.params)
+    console.log(req.params, req.files)
+    const id_user = req.params.id
     const file = req.files.perfil
-    file.mv(path.join(__dirname, "public", "user", file.name), (err, succ) => {
+    const urlFile = `${id_user}${file.name}`
+    file.mv(path.join(__dirname, "public", "user", urlFile), (err, succ) => {
         if(err){
+            
             res.status(401).json({ok: false, message : "Error al subir archivo"})
         }else{
-            res.status(201).json({ok : true, message : "Archivo subido con exito!!"})
+            User.findOne( {
+                where: {
+                    id : id_user
+                }
+            } ).then(async (data) => {
+                data.setDataValue("photoProfile", urlFile)
+                try {
+                    await data.save()
+                    res.status(201).json({ok : true, message : "Archivo subido con exito!!"})
+                } catch (error) {
+                    res.status(401).json({ok: false, message : "Error al subir archivo"})
+                }
+                
+            }).catch(err => {
+                res.status(401).json({ok: false, message : "Error al subir archivo"})
+            })
+            
+            
         }
     })
 })
@@ -37,12 +92,15 @@ app.post("/webhook", (req, res, next) => {
     })
 
     function pandemicInfo (agent){
-        agent.add("Info de la pandemia")
-        agent.add("Informacion sobre la pandemia")
+
+
+        agent.add("Respuesta desde Node")
     }
 
     function userSettings(agent){
+
         agent.add("Vamos a cambiar su usario crack")
+
     }
     var intentMap = new Map()
 
@@ -53,28 +111,27 @@ app.post("/webhook", (req, res, next) => {
     console.log(req.body)
 })
 
+/**
+ * Relaciones de la base de datos MySQL
+ */
 User.hasMany(Datos, {
+    onDelete: 'cascade'
+})
+User.hasMany(Bitacora, {
     onDelete: 'cascade'
 }) 
 Datos.belongsTo(User)
+Bitacora.belongsTo(User)
 
-con.sync().then(inf => {
+/**
+ * Alta del servidor Express.js
+ */
+con.sync({alter:true}).then(inf => {
     
-    // const expressServer = app.listen(8080);
-            
-    app.listen(8080, () => {
+    app.listen(process.env.PORT || 8080, () => {
         console.log("Listen 8080")
     })
-    /*
-    Datos.findAll().then(data => {
-        data.forEach( async (inf) => {
-            console.log(inf.dataValues)
-            
-        } )
-    }).catch(err => {
-        console.log(err)
-    }) */
-
+    
 }).catch(err => {
     console.log("HUBO ERROR:", err)
 })
