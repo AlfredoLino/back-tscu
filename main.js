@@ -11,6 +11,7 @@ const informe = require("./routes/POST/informe")
 const rtTemp = require("./routes/GET/temperatura")
 const SignInRoute = require('./routes/POST/SignIn')
 const LogInRoute = require('./routes/POST/LogIn')
+const getInformes = require("./routes/GET/informes")
 const dialogFulfillment = require("dialogflow-fulfillment")
 const jwt = require('jsonwebtoken')
 const path = require("path")
@@ -25,6 +26,7 @@ app.use(cors())
 /**
  * Declaracion de rutas
  */
+app.use(getInformes)
 app.use(informe)
 app.use(LogInRoute)
 app.use(SignInRoute)
@@ -126,8 +128,8 @@ Bitacora.belongsTo(User)
 /**
  * Alta del servidor Express.js
  */
-con.sync({alter:true}).then(inf => {
-    
+con.sync().then(inf => {
+
     app.listen(process.env.PORT || 8080, () => {
         console.log("Listen 8080")
     })
