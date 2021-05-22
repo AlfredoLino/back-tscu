@@ -12,8 +12,8 @@ const rtTemp = require("./routes/GET/temperatura")
 const SignInRoute = require('./routes/POST/SignIn')
 const LogInRoute = require('./routes/POST/LogIn')
 const getInformes = require("./routes/GET/informes")
+const getUserAndroid = require("./routes/Android/getUser")
 const dialogFulfillment = require("dialogflow-fulfillment")
-const jwt = require('jsonwebtoken')
 const path = require("path")
 const expfileup = require("express-fileupload")
 
@@ -26,6 +26,7 @@ app.use(cors())
 /**
  * Declaracion de rutas
  */
+app.use(getUserAndroid)
 app.use(getInformes)
 app.use(informe)
 app.use(LogInRoute)
@@ -33,28 +34,6 @@ app.use(SignInRoute)
 app.use(rtTemp)
 
 
-app.get("/getUsers/:email/:pass", async (req, res, next) => {
-    console.log(req.params);
-    const { email, pass } = req.params
-    try {
-        const record = await User.findAll({
-            where: {
-                email,
-                pass
-            }
-        })
-        if(record.length > 0){
-            const [user] = record
-            const token = jwt.sign({iduser : user.id, email: user.email}, process.env.JWTKEY)
-            res.status(201).send(token)    
-        }
-        else 
-            res.status(400).send("Error")
-    } catch (error) {
-        console.log(error)
-        res.status(401).json({ ok : false, msg: "No se ha podido iniciar sesión. Revise sus credenciales."})
-    }
-})
 app.post("/upload/:id", expfileup(), (req, res, next) => {
     console.log(req.params, req.files)
     const id_user = req.params.id
