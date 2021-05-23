@@ -10,7 +10,6 @@ const controller = async (req, res, next) => {
                 pass
             }
         })
-        console.log(record)
         if(record.length > 0){
             const [user] = record
             const token = jwt.sign({id : user.id, email: user.email}, process.env.JWTKEY)

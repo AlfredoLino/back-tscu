@@ -16,7 +16,7 @@ const getUserAndroid = require("./routes/Android/getUser")
 const dialogFulfillment = require("dialogflow-fulfillment")
 const path = require("path")
 const expfileup = require("express-fileupload")
-
+const MainControllerSocket = require("./socket/MainController")
 /**
  * Middlewares
  */
@@ -109,9 +109,13 @@ Bitacora.belongsTo(User)
  */
 con.sync().then(inf => {
 
-    app.listen(process.env.PORT || 8080, () => {
+    const express_serv = app.listen(process.env.PORT || 8080, () => {
         console.log("Listen 8080")
     })
+
+    const io = require("socket.io")(express_serv, { cors : '*' })
+
+    io.on('connection', MainControllerSocket)
     
 }).catch(err => {
     console.log("HUBO ERROR:", err)

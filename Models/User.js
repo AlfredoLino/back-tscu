@@ -31,7 +31,8 @@ const User = con.define('Usuario', {
     photoProfile: {
         type: DataTypes.STRING,
         unique: false,
-        allowNull: true
+        allowNull: true,
+        defaultValue : "nopicture.png"
     }
 })
 
