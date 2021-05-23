@@ -26,6 +26,7 @@ app.use(cors())
 /**
  * Declaracion de rutas
  */
+app.use(require("./routes/GET/getUserById"))
 app.use(getUserAndroid)
 app.use(getInformes)
 app.use(informe)
