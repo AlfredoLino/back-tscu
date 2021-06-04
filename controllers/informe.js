@@ -1,5 +1,23 @@
 const Bitacora = require("../Models/Bitacora")
 
+const df_NewInforme = async(UsuarioId, informe) => {
+    console.log("El informe es: ", informe)
+    try {
+        const record = await Bitacora.create(
+            {
+                UsuarioId : Number(UsuarioId),
+                informe,
+            }
+        )
+        if(record){
+            return true
+        }
+        return false
+        
+    } catch (error) {
+        return false
+    }
+}
 const controller = (req, res, next) => {
     const { UsuarioId, informe, foto } = req.body;
 
@@ -28,4 +46,5 @@ const controller = (req, res, next) => {
     })
 }
 
-module.exports = controller
+module.exports.controller_ep = controller
+module.exports.controller_df = df_NewInforme

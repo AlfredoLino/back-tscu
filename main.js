@@ -2,6 +2,8 @@
 require('dotenv').config()
 const express = require("express")
 const cors = require("cors")
+const sessions = require("express-session")
+const {controller_df} = require("./controllers/informe")
 const app = express()
 const con = require("./Models/dbcon")
 const User = require("./Models/User")
@@ -17,12 +19,141 @@ const dialogFulfillment = require("dialogflow-fulfillment")
 const path = require("path")
 const expfileup = require("express-fileupload")
 const MainControllerSocket = require("./socket/MainController")
+let userIn;
+
+module.exports.userOut = () => {
+    userIn = undefined
+}
+module.exports.userIn = userIn;
 /**
  * Middlewares
  */
 app.use(express.static("public"))
 app.use(express.json())
 app.use(cors())
+app.use(sessions({ secret:"dialogflow", saveUninitialized:false, resave:false }))
+
+/**
+ * Relaciones de la base de datos MySQL
+ */
+User.hasMany(Datos, {
+    onDelete: 'cascade'
+})
+User.hasMany(Bitacora, {
+    onDelete: 'cascade'
+}) 
+Datos.belongsTo(User)
+Bitacora.belongsTo(User)
+
+
+con.sync().then(inf => {
+
+    console.log("BDD sincronizada")
+    
+}).catch(err => {
+    console.log("HUBO ERROR:", err)
+})
+/**
+ * Alta del servidor Express.js
+ * y
+ * Socket.io
+ */
+const express_serv = app.listen(process.env.PORT || 8080, () => {
+    console.log("Listen 8080")
+})
+
+const io = require("socket.io")(express_serv, { cors : '*' })
+
+io.on('connection', MainControllerSocket)
+
+
+/**
+ * Webhook DialogFlow
+ */
+
+app.post("/hook", (req, res, next) => {
+    const agent = new dialogFulfillment.WebhookClient({
+        request: req,
+        response: res
+    })
+    /**
+     * @param {Dialogflow} agent
+     * @event Dialogflow intent
+     * @async Crea petición asincrona a la base de datos.
+     * @summary: Añade un informe nuevo a la bitacora del usuario registrado y esta
+     * se refleja en tiempo real
+     */
+    async function informeNuevo(agent){
+        console.log(userIn)
+        const payload = {
+            "richContent": [
+              [
+                {
+                  "type": "description",
+                  "title": "Esto se añadirá a la bitacora: ",
+                  "text": [
+                    agent.parameters.informe,
+                  ]
+                }
+              ]
+            ]
+        }
+        ///
+        try {
+            const isOk = await controller_df(userIn.id, agent.parameters.informe)
+            if(isOk){
+                io.in(userIn.email).emit("newInf", "Nueva bitacora para: "+userIn.email)
+                agent.add(new dialogFulfillment.Payload(agent.UNSPECIFIED, payload,
+                    {sendAsMessage:true, rawPayload:true}))
+                agent.add("Puedo ayudarte en otra cosa?")
+            }else{
+                agent.add("Hubo un error al hacerlo :c")
+            }
+            
+        } catch (error) {
+            agent.add("Hubo un error al hacerlo :c")
+        }
+        ///
+    }
+
+    /**
+     * @param {DialogFlow Agent} agent
+     * @event DialogFlow Intent
+     * @async Crea petición asincrona a la base de datos.
+     * @summary: Busca un perfil por ID de usuario y regresa parte de sus datos, un enlace 
+     * a su perfil en la pagina y la foto de perfil 
+     */
+
+    async function goToProfile(agent){
+        const getUserById = require("./utils/getUserById")
+        const getPayload = require("./DialogFlow/Payloads/GotoProfile")
+        const id = agent.parameters.idusuario;
+        const rec = await getUserById(id)
+        console.log("Perfil: ",agent.parameters)
+        if(rec.ok){
+            const {id, nombre, photoProfile} = rec.user.dataValues
+            const payload = getPayload(id, `http://localhost:3000/profile/${id}`, `https://c77322e035ac.ngrok.io/user/${photoProfile}`, nombre)
+            agent.add(new dialogFulfillment.Payload(agent.UNSPECIFIED, payload, {sendAsMessage : true, rawPayload:true}))
+        }else{
+            agent.add("No encontramos tal perfil :cc")
+        }
+    }
+
+    /**
+     * Vinculando que funcion despachará cierto intent dado
+     */
+
+    const intentMap = new Map()
+    intentMap.set('InformeNuevo', informeNuevo)
+    intentMap.set('buscarPerfil', goToProfile)
+    agent.handleRequest(intentMap)
+})
+
+
+/**
+ * Webhook for DialogFlow
+ */
+
 /**
  * Declaracion de rutas
  */
@@ -30,7 +161,14 @@ app.use(require("./routes/GET/getUserById"))
 app.use(getUserAndroid)
 app.use(getInformes)
 app.use(informe)
-app.use(LogInRoute)
+/**
+ * LOG IN
+ */
+
+app.use(LogInRoute, (req, res) => {
+    userIn = req.session.user
+    console.log("Usuario en", userIn)
+})
 app.use(SignInRoute)
 app.use(rtTemp)
 
@@ -66,61 +204,7 @@ app.post("/upload/:id", expfileup(), (req, res, next) => {
         }
     })
 })
-app.post("/webhook", (req, res, next) => {
 
-    const agent = new dialogFulfillment.WebhookClient({
-        request: req,
-        response: res
-    })
-
-    function pandemicInfo (agent){
-
-
-        agent.add("Respuesta desde Node")
-    }
-
-    function userSettings(agent){
-
-        agent.add("Vamos a cambiar su usario crack")
-
-    }
-    var intentMap = new Map()
-
-    intentMap.set('pandemicInfo', pandemicInfo)
-    intentMap.set('userSettings', userSettings)
-
-    agent.handleRequest(intentMap)
-    console.log(req.body)
-})
-
-/**
- * Relaciones de la base de datos MySQL
- */
-User.hasMany(Datos, {
-    onDelete: 'cascade'
-})
-User.hasMany(Bitacora, {
-    onDelete: 'cascade'
-}) 
-Datos.belongsTo(User)
-Bitacora.belongsTo(User)
-
-/**
- * Alta del servidor Express.js
- */
-con.sync().then(inf => {
-
-    const express_serv = app.listen(process.env.PORT || 8080, () => {
-        console.log("Listen 8080")
-    })
-
-    const io = require("socket.io")(express_serv, { cors : '*' })
-
-    io.on('connection', MainControllerSocket)
-    
-}).catch(err => {
-    console.log("HUBO ERROR:", err)
-})
 
 
 

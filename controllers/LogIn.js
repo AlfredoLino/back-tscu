@@ -11,9 +11,17 @@ const controller = async (req, res, next) => {
             }
         })
         if(record.length > 0){
+
             const [user] = record
             const token = jwt.sign({id : user.id, email: user.email}, process.env.JWTKEY)
+            req.session.user = {
+                email : user.email,
+                id: user.id,
+                nombre: user.nombre
+            };
+            console.log(req.session)
             res.status(201).json({ok : true, token, pf:user.photoProfile, email: user.email, nombre : user.nombre, id : user.id})    
+            next()
         }
         else 
             throw new Error("No hay registro")
