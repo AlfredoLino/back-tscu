@@ -10,8 +10,13 @@ const Datos = con.define('Dato',
             primaryKey: true
         },
         temperatura: {
-            type: dt.DOUBLE(2, 2),
+            type: dt.DOUBLE(4, 2),
             allowNull: false,
+            unique: false
+        },
+        distancia:{
+            type: dt.DOUBLE(4,2),
+            allowNull:false,
             unique: false
         }
     }

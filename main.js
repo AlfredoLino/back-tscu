@@ -1,4 +1,3 @@
-//const fetch = require('node-fetch')
 require('dotenv').config()
 const express = require("express")
 const cors = require("cors")
@@ -11,6 +10,7 @@ const Datos = require("./Models/Datos")
 const Bitacora = require("./Models/Bitacora")
 const informe = require("./routes/POST/informe")
 const rtTemp = require("./routes/GET/temperatura")
+const sensorRoute = require('./routes/POST/sensor')
 const SignInRoute = require('./routes/POST/SignIn')
 const LogInRoute = require('./routes/POST/LogIn')
 const getInformes = require("./routes/GET/informes")
@@ -157,22 +157,6 @@ app.post("/hook", (req, res, next) => {
 /**
  * Declaracion de rutas
  */
-app.use(require("./routes/GET/getUserById"))
-app.use(getUserAndroid)
-app.use(getInformes)
-app.use(informe)
-/**
- * LOG IN
- */
-
-app.use(LogInRoute, (req, res) => {
-    userIn = req.session.user
-    console.log("Usuario en", userIn)
-})
-app.use(SignInRoute)
-app.use(rtTemp)
-
-
 app.post("/upload/:id", expfileup(), (req, res, next) => {
     console.log(req.params, req.files)
     const id_user = req.params.id
@@ -204,6 +188,23 @@ app.post("/upload/:id", expfileup(), (req, res, next) => {
         }
     })
 })
+
+app.use(sensorRoute)
+app.use(require("./routes/GET/getUserById"))
+app.use(getUserAndroid)
+app.use(getInformes)
+app.use(informe)
+/**
+ * LOG IN
+ */ 
+
+app.use(SignInRoute)
+app.use(LogInRoute, (req, res) => {
+    userIn = req.session.user
+    console.log("Usuario en", userIn)
+})    
+app.use(rtTemp)
+
 
 
 

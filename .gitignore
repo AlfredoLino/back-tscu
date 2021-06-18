@@ -1,3 +1,5 @@
 node_modules
 *.pem
 public
+package-lock.json
+.env
